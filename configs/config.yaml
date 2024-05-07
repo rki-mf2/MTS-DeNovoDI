@@ -1,0 +1,61 @@
+#!yaml
+ ##General Configuration file
+
+ #database: '/home/lutfia/scratch/megaX/build/main/test.fasta'
+ #database: '/home/lutfia/scratch/megaX/build/main/refSeqViral_monkeypox.fasta'
+ database: '/home/lutfia/scratch/cancer/fasta/GCF_000001405.38_GRCh38.p12_protein.faa'
+ samples: 'data/sample_list.tsv'
+ matrix: "data/matrix/blosum62" #['blosum62', 'pam120']
+ sample_type: 'fa' #['mgf', 'fa', 'novor', 'peptide_shaker']
+
+ #User can decide between two models: 
+ ## 1- casanovo_massivekb: Default Casanovo weights to use when analyzing tryptic data
+ ## 2- casanovo_nontryptic: Casanovo weights to use when analyzing non-tryptic data, obtained by fine-tuning the tryptic model on multi-enzyme data. 
+ ## wget https://github.com/Noble-Lab/casanovo/releases/download/v4.0.0/casanovo_massivekb.ckpt
+ DE_NOVO_SEQ: #if mgf
+     algorithm: 'both' #['casanovo', 'smsnet', 'both'] please note, both algorithms require GPU (atm).
+     casanovo_model: "/home/lutfia/scratch/MTS-DeNovoDI/resources/denovo_models/casanovo_massivekb.ckpt" 
+     smsnet_model: "/home/lutfia/scratch/MTS-DeNovoDI/resources/denovo_models/MassIVE_HCD"
+     casanovo_gpu: "" #this could be e.g. 'CUDA_VISIBLE_DEVICES=2,' or 'srun --gpus 1 --mem 50GB -c 32 '
+     smsnet_gpu: "srun --gpus 1 --mem 50GB -c 32 " #this could be e.g. 'CUDA_VISIBLE_DEVICES=2,' or for slurm 'srun --gpus 1 --mem 50GB -c 32 '
+     casanovo_mode: "sequence" #['configure', 'evaluate', 'train', 'sequence', 'version']
+     peptide_cutoff: 60 #cut off value of peptide scores (used for Casanovo, Novor and SMSNet sequencing scores)
+
+################################# MegaX Configs ######################################
+ MEGAX_MODE: 'classification' #['stat', 'mutate_stat', 'write_db', 'simulate_peptides', 'mutate_seq_len', 'classification']
+ INDEX_TYPE: 'IBF' #['IBF', 'HIBF', 'HIBF_REF', 'BS', 'FM_IDX']
+ GENERAL:
+  threads: 40 #number of threads for mutations to be performed, also used for binary search algorithm
+  k_mer: 5 #k_mer size
+  score: 25 #muation score, if the score is 100 megaX will not generate any mutations
+  window_size: 5 #minimiser window size
+  minimiser: 0 #use forward minimiser computation 
+  simulation_errors: 1 #number of simulation errors used in the simulate_peptides mode 
+  number_of_peptides: 1000 #number of simulated peptides
+  number_of_muatetd_seq: 5 #number of generated sequences of each single sequence (used for mutate to seq length)
+  
+ HIBF:
+   #filter: "path/to/filter.hibf" #path and name of the output filter file
+   alpha: 1.2 #alpha value
+   sketch_bits: 12 #HyperLogLog sketch bits
+   maximum_false_positive_rate: 0.01 #maximum false positive rate for each filter
+   threads: 10 #number of buuilding threads
+   hashes: 2 #number of hash functions
+   split_size: 2 #size of each sketch splits (user bins in each filter)
+   max_rearrangement: 0.5 #maximum rearrangement ratio
+   disable_rearrangement: 1 #1: True ; 0: False
+   disable_estimation: 1 #1: True ; 0: False
+   threshold: 1 #threshold to assign query to user bin, will be changed in the classification step
+
+ IBF: 
+   hashes: 2 #number of hash functions (3 produces smaller filters with more errors)
+
+ FM_INDEX:
+   number_of_references: 3 #total number of references in the input reference file, this parameter is necessary for vectorization [grep -c ">" input.fasta]
+   #index_output_file: "path/to/index.idx" #path to target index file (default is stored in results file)
+
+ CLASSIFICATION:
+   classification_threshold: 0.70 #assignments threshold of each peptide sequence (k-mer content)
+
+ VISUALIZATION:
+   depth: 60 #Number of samples shown in the related plot (used for histogram and classification output)

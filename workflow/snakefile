@@ -1,0 +1,99 @@
+
+
+#!/bin/python3
+
+#Syntax: all global variables are written in big snake case syntax (e.g. GLOBAL_VARIABLE):
+
+import pandas as pd
+import sys
+import yaml
+
+# Load pipeline's configs
+configfile : "configs/config.yaml"
+
+INTERNAL_IMPORTS = [
+    "rules/casanovo.smk",
+    "rules/smsnet.smk",
+    "rules/denovo_seq.smk",
+    "rules/novor.smk",
+    "rules/peptide_shaker.smk",
+    "rules/ibf.smk",
+    "rules/hibf.smk",
+    "rules/bs.smk",
+    "rules/fm_index.smk",
+    "rules/megaX_util.smk",
+    "rules/classification.smk",
+    "rules/reports.smk"
+]
+
+for SMK in INTERNAL_IMPORTS:
+    include: SMK
+
+GENERAL_CONFIG = "configs/config.yaml"
+CASANOVO_CONFIG = "configs/casanovo_tool_config.yaml"
+
+try:
+    with open(GENERAL_CONFIG, 'r') as file:
+        print("[INFO] passed for:", GENERAL_CONFIG)
+except FileNotFoundError:
+    print("[ERROR] opening the file:", GENERAL_CONFIG)
+
+try:
+    with open(CASANOVO_CONFIG, 'r') as file:
+        print("[INFO]  passed for:", CASANOVO_CONFIG)
+except FileNotFoundError:
+    print("[ERROR] opening the file:", CASANOVO_CONFIG)
+
+
+#Target rules collector
+RULE_ALL = list()
+SAMPLES = pd.read_csv(config['samples'], index_col = "sample", sep= "\t")
+
+
+def PARSE_USAGE():
+    """
+    Parse usage from general config file
+        :param
+            None
+        :output
+            None
+         :return
+            List of rule control. 
+    """
+    rule_all = list()
+    
+    if (config['MEGAX_MODE'] == 'classification'):
+        rule_all.append(expand("results/megaX/classifiation/{sample}_classification_report.txt", sample=list(SAMPLES.index)))
+        rule_all.append("results/reports/reference_hist.pdf")
+        rule_all.append(expand("results/reports/peptides_vis_{sample}.pdf", sample=list(SAMPLES.index)))
+        rule_all.append(expand("results/reports/{sample}_classification_report.pdf", sample=list(SAMPLES.index)))
+        rule_all.append(expand("results/reports/{sample}_assignment_report.pdf", sample=list(SAMPLES.index)))
+
+    elif (config['MEGAX_MODE'] == 'stat'):
+        rule_all.append("results/megaX/stat/reference_id_map.log")
+        rule_all.append("results/megaX/stat/reference_hist.log")
+        rule_all.append("results/megaX/stat/lengths.log")
+
+    elif (config['MEGAX_MODE'] == 'mutate_stat'):
+        rule_all.append("results/megaX/mutate_stat/mutate_stat.log")
+
+    elif (config['MEGAX_MODE'] == 'write_db'):
+        rule_all.append("results/megaX/mutated_db/mutated_" + os.path.basename(config['database']))
+
+    elif (config['MEGAX_MODE'] == 'simulate_peptides'):
+        rule_all.append("results/megaX/simulate_peptides/simulated_" + os.path.basename(config['database']))
+
+    elif (config['MEGAX_MODE'] == 'mutate_seq_len'):
+        rule_all.append("results/megaX/mutated_db_len/mutated_" + os.path.basename(config['database']))
+
+    
+    
+    return rule_all
+
+
+RULE_ALL = PARSE_USAGE()
+
+rule all:
+    input:
+        RULE_ALL
+

@@ -1,0 +1,5 @@
+*********************** MegaX Complete Usage Report ******
+* Real time : 4.068e-06 sec         
+* CPU time  : 0.003044 sec                    
+* Peak RSS  : 4 MByte              
+**********************************************************
